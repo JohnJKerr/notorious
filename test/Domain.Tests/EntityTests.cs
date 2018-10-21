@@ -94,6 +94,64 @@ namespace Domain.Tests
 			Assert.Throws<ArgumentException>(() => entity.RemoveTag(tag));
 		}
 
+		[Fact]
+		public void InitialiseAudit_sets_CreatedByUser()
+		{
+			// arrange
+			var user = GenerateUser();
+			var entity = CreateBuilder().Build();
+			
+			// act
+			entity.InitialiseAudit(user, DateTime.UtcNow);
+			
+			// assert
+			Assert.Equal(user, entity.CreatedByUser);
+		}
+
+		[Fact]
+		public void InitialiseAudit_sets_CreatedDate()
+		{
+			// arrange
+			var date = DateTime.UtcNow;
+			var entity = CreateBuilder().Build();
+			
+			// act
+			entity.InitialiseAudit(GenerateUser(), date);
+			
+			// assert
+			Assert.Equal(date, entity.CreatedDate);
+		}
+
+		[Fact]
+		public void WithAudit_before_Build_sets_CreatedByUser()
+		{
+			// arrange
+			var builder = CreateBuilder();
+			var user = GenerateUser();
+			
+			// act
+			var output = builder.WithAudit(user, DateTime.UtcNow)
+				.Build();
+			
+			// assert
+			Assert.Equal(user, output.CreatedByUser);
+		}
+
+		[Fact]
+		public void WithAudit_before_Build_sets_CreatedDate()
+		{
+			// arrange
+			var builder = CreateBuilder();
+			var date = DateTime.UtcNow;
+			
+			// act
+			var output = builder.WithAudit(GenerateUser(), date)
+				.Build();
+			
+			// assert
+			Assert.Equal(date, output.CreatedDate);
+		}
+
 		private static Tag GenerateTag()
 		{
 			return new Tag.Builder(Guid.NewGuid().ToString())
@@ -105,6 +163,12 @@ namespace Domain.Tests
 			return Enumerable.Range(0, numberToGenerate)
 				.Select(_ => GenerateTag())
 				.ToArray();
+		}
+
+		private static User GenerateUser()
+		{
+			return new User.Builder()
+				.Build();
 		}
 	}
 }

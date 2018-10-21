@@ -21,7 +21,7 @@ namespace Domain
 			public override Tag Build()
 			{
 				var tag = new Tag(_name);
-				tag.AddTags(Tags);
+				SetBaseProperties(tag);
 				return tag;
 			}
 		}

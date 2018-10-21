@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Domain
 {
@@ -14,6 +15,10 @@ namespace Domain
 		public class Builder : Entity.Builder<Note>
 		{
 			private string _content;
+
+			public Builder()
+			{
+			}
 			
 			public Builder WithContent(string content)
 			{
@@ -24,8 +29,8 @@ namespace Domain
 			public override Note Build()
 			{
 				var note = new Note();
+				SetBaseProperties(note);
 				note.SetContent(_content);
-				note.AddTags(Tags);
 				return note;
 			}
 		}
