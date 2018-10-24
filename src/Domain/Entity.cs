@@ -6,7 +6,7 @@ namespace Domain
 {
 	public abstract class Entity
 	{
-		private readonly List<Tag> _tags;
+		private List<Tag> _tags;
 		
 		protected Entity()
 		{
@@ -14,7 +14,7 @@ namespace Domain
 			_tags = new List<Tag>();
 		}
 		
-		public Guid Id { get; }
+		public Guid Id { get; private set; }
 		public IEnumerable<Tag> Tags => _tags;
 		public User CreatedByUser { get; private set; }
 		public DateTime CreatedDate { get; private set; }
