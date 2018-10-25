@@ -7,6 +7,7 @@ namespace Domain
 	public abstract class Entity
 	{
 		private List<Tag> _tags;
+		private bool _hasCreateAudit;
 		
 		protected Entity()
 		{
@@ -18,6 +19,8 @@ namespace Domain
 		public IEnumerable<Tag> Tags => _tags;
 		public User CreatedByUser { get; private set; }
 		public DateTime CreatedDate { get; private set; }
+		public User LastModifiedByUser { get; private set; }
+		public DateTime LastModifiedDate { get; private set; }
 
 		public void AddTag(Tag tag)
 		{
@@ -31,10 +34,18 @@ namespace Domain
 			_tags.Remove(tag);
 		}
 
-		public void InitialiseAudit(User createdBy, DateTime createdDate)
+		public void InitialiseCreateAudit(User createdBy, DateTime createdDate)
 		{
+			_hasCreateAudit = true;
 			CreatedByUser = createdBy;
 			CreatedDate = createdDate;
+		}
+
+		public void InitialiseUpdateAudit(User modifiedBy, DateTime modifiedDate)
+		{
+			if(!_hasCreateAudit) throw new InvalidOperationException();
+			LastModifiedByUser = modifiedBy;
+			LastModifiedDate = modifiedDate;
 		}
 
 		public abstract class Builder<TEntity>
@@ -51,7 +62,7 @@ namespace Domain
 				return this;
 			}
 
-			public Builder<TEntity> WithAudit(User createdBy, DateTime createdDate)
+			public Builder<TEntity> WithCreateAudit(User createdBy, DateTime createdDate)
 			{
 				_hasAudit = true;
 				_createdByUser = createdBy;
@@ -66,16 +77,16 @@ namespace Domain
 					.ForEach(entity.AddTag);
 			}
 
-			private void InitialiseAudit(TEntity entity)
+			private void InitialiseCreateAudit(TEntity entity)
 			{
 				if (!_hasAudit) return;
-				entity.InitialiseAudit(_createdByUser, _createdDate);
+				entity.InitialiseCreateAudit(_createdByUser, _createdDate);
 			}
 
 			protected void SetBaseProperties(TEntity entity)
 			{
 				AddTags(entity);
-				InitialiseAudit(entity);
+				InitialiseCreateAudit(entity);
 			}
 			
 			public abstract TEntity Build();

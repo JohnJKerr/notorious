@@ -13,7 +13,7 @@ namespace Storage.Tests
 		where TEntity : Entity
 	{
 		private const string ConnectionString = "mongodb://localhost:27017";
-		private const string DbName = "notorious-integ-tests";
+		private const string DbName = "notorious-storage-integ-tests";
 		protected readonly MongoStorageClient Client;
 
 		protected MongoStorageClientTests()
