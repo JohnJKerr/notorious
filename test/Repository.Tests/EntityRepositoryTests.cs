@@ -64,11 +64,15 @@ namespace Repository.Tests
 		public void GetByIds_returns_the_correct_Entities()
 		{
 			// arrange
-			var entities = CreateAndSaveEntities();
+			var entities = CreateAndSaveEntities()
+				.OrderBy(e => e.Id)
+				.ToList();
 			var entityIds = entities.Select(e => e.Id).ToArray();
 
 			// act
-			var getEntities = Repository.GetByIds(entityIds);
+			var getEntities = Repository.GetByIds(entityIds)
+				.OrderBy(e => e.Id)
+				.ToList();
 
 			// assert
 			Assert.Equal(entities, getEntities, new EntityComparer());
@@ -107,10 +111,10 @@ namespace Repository.Tests
 			filter.Skip = numberToSkip;
 			var getWithoutSkip = Repository.Get(CreateFilter());
 			var expected = getWithoutSkip.Skip(5);
-			
+
 			// act
 			var getWithSkip = Repository.Get(filter);
-			
+
 			// assert
 			Assert.Equal(expected, getWithSkip, new EntityComparer());
 		}
@@ -120,7 +124,7 @@ namespace Repository.Tests
 		{
 			// act
 			var getEntities = Repository.Get(CreateFilter());
-			
+
 			// assert
 			Assert.Empty(getEntities);
 		}
@@ -130,11 +134,11 @@ namespace Repository.Tests
 		{
 			// arrange
 			var entity = CreateEntity();
-			
+
 			// act
 			Repository.Add(entity);
 			Repository.SaveChanges();
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
 			Assert.Equal(entity, getEntity, new EntityComparer());
@@ -146,12 +150,12 @@ namespace Repository.Tests
 			// arrange
 			var entity = CreateEntity();
 			var entityCount = GetEntityCount();
-			
+
 			// act
 			Repository.Add(entity);
 			Repository.Add(entity);
 			Repository.SaveChanges();
-			
+
 			// assert
 			Assert.Equal(entityCount + 1, GetEntityCount());
 		}
@@ -159,22 +163,35 @@ namespace Repository.Tests
 		[Fact]
 		public void Add_Entity_twice_before_SaveChanges_inserts_the_most_recent_version()
 		{
-			throw new NotImplementedException();
+			// arrange
+			var entity = CreateEntity();
+			Repository.Add(entity);
+			AddTagToEntity(entity);
+			Repository.Add(entity);
+			var expectedTagCount = entity.Tags.Count();
+
+			// act
+			Repository.SaveChanges();
+
+			// assert
+			var getEntity = Repository.GetById(entity.Id);
+			Assert.Equal(expectedTagCount, getEntity.Tags.Count());
 		}
 
 		[Fact]
-		public void Add_before_SaveChanges_calls_InitialiseCreateAudit_on_Entities()
+		public void Add_before_SaveChanges_adds_UpdateAudit_to_Entities()
 		{
 			// arrange
 			var entity = CreateEntity();
-			
+			var auditCount = entity.UpdateAudits.Count();
+
 			// act
 			Repository.Add(entity);
 			Repository.SaveChanges();
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
-			Assert.NotEqual(default(DateTime), getEntity.CreatedDate);
+			Assert.Equal(auditCount + 1, getEntity.UpdateAudits.Count());
 		}
 
 		[Fact]
@@ -188,7 +205,7 @@ namespace Repository.Tests
 			Repository.Add(entity);
 			Repository.SaveChanges();
 			Repository.SaveChanges();
-			
+
 			// assert
 			Assert.Equal(entityCount + 1, GetEntityCount());
 		}
@@ -198,10 +215,10 @@ namespace Repository.Tests
 		{
 			// arrange
 			var entity = CreateEntity();
-			
+
 			// act
 			Repository.Add(entity);
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
 			Assert.Null(getEntity);
@@ -212,11 +229,11 @@ namespace Repository.Tests
 		{
 			// arrange
 			var entity = CreateAndSaveEntity();
-			
+
 			// act
 			Repository.Delete(entity);
 			Repository.SaveChanges();
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
 			Assert.Null(getEntity);
@@ -227,10 +244,10 @@ namespace Repository.Tests
 		{
 			// arrange
 			var entity = CreateAndSaveEntity();
-			
+
 			// act
 			Repository.Delete(entity);
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
 			Assert.NotNull(getEntity);
@@ -242,30 +259,31 @@ namespace Repository.Tests
 			// arrange
 			var entity = CreateAndSaveEntity();
 			AddTagToEntity(entity);
-			
+
 			// act
 			Repository.Update(entity);
 			Repository.SaveChanges();
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
 			Assert.Equal(entity.Tags, getEntity.Tags, new EntityComparer());
 		}
 
 		[Fact]
-		public void Update_before_SaveChanges_calls_InitialiseUpdateAudit_on_Entities()
+		public void Update_before_SaveChanges_adds_UpdateAudit_to_Entities()
 		{
 			// arrange
 			var entity = CreateAndSaveEntity();
+			var auditCount = entity.UpdateAudits.Count();
 			AddTagToEntity(entity);
-			
+
 			// act
 			Repository.Update(entity);
 			Repository.SaveChanges();
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
-			Assert.NotEqual(default(DateTime), getEntity.LastModifiedDate);
+			Assert.Equal(auditCount + 1, getEntity.UpdateAudits.Count());
 		}
 
 		[Fact]
@@ -274,19 +292,32 @@ namespace Repository.Tests
 			// arrange
 			var entity = CreateAndSaveEntity();
 			AddTagToEntity(entity);
-			
+
 			// act
 			Repository.Update(entity);
-			
+
 			// assert
 			var getEntity = Repository.GetById(entity.Id);
 			Assert.NotEqual(entity.Tags, getEntity.Tags, new EntityComparer());
 		}
-		
+
 		[Fact]
 		public void Update_Entity_twice_before_SaveChanges_updates_to_the_most_recent_version()
 		{
-			throw new NotImplementedException();
+			// arrange
+			var entity = CreateAndSaveEntity();
+			AddTagToEntity(entity);
+			Repository.Update(entity);
+			AddTagToEntity(entity);
+			Repository.Update(entity);
+			var expectedTagCount = entity.Tags.Count();
+
+			// act
+			Repository.SaveChanges();
+
+			// assert
+			var getEntity = Repository.GetById(entity.Id);
+			Assert.Equal(expectedTagCount, getEntity.Tags.Count());
 		}
 
 		[Fact]
@@ -294,7 +325,7 @@ namespace Repository.Tests
 		{
 			// act
 			var exception = Record.Exception(() => Repository.SaveChanges());
-			
+
 			// assert
 			Assert.Null(exception);
 		}
@@ -324,7 +355,7 @@ namespace Repository.Tests
 				.Build();
 			entity.AddTag(tag);
 		}
-		
+
 		private long GetEntityCount() => Client.Set<TEntity>().CountDocuments(Builders<TEntity>.Filter.Empty);
 
 		private class EntityComparer : IEqualityComparer<Entity>

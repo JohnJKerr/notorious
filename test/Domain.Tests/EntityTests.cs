@@ -95,118 +95,58 @@ namespace Domain.Tests
 		}
 
 		[Fact]
-		public void InitialiseCreateAudit_sets_CreatedByUser()
+		public void UpdateAudits_defaults_to_empty_list()
 		{
-			// arrange
-			var user = GenerateUser();
-			var entity = CreateBuilder().Build();
-
 			// act
-			entity.InitialiseCreateAudit(user, DateTime.UtcNow);
-
-			// assert
-			Assert.Equal(user, entity.CreatedByUser);
-		}
-
-		[Fact]
-		public void InitialiseCreateAudit_sets_CreatedDate()
-		{
-			// arrange
-			var date = DateTime.UtcNow;
 			var entity = CreateBuilder().Build();
-
-			// act
-			entity.InitialiseCreateAudit(GenerateUser(), date);
-
-			// assert
-			Assert.Equal(date, entity.CreatedDate);
-		}
-
-		[Fact]
-		public void Multiple_calls_to_InitialiseCreateAudit_do_not_modify_audit_data()
-		{
-			// arrange
-			var entity = CreateBuilder().Build();
-			var user = GenerateUser();
-			var date = DateTime.UtcNow;
-			entity.InitialiseCreateAudit(user, date);
-			
-			// act
-			entity.InitialiseCreateAudit(GenerateUser(), DateTime.UtcNow);
 			
 			// assert
-			Assert.True(entity.CreatedByUser.Equals(user) && entity.CreatedDate.Equals(date));
+			Assert.Empty(entity.UpdateAudits);
 		}
 
 		[Fact]
-		public void WithCreateAudit_before_Build_sets_CreatedByUser()
+		public void AddUpdateAudit_adds_to_UpdateAudits()
 		{
 			// arrange
-			var builder = CreateBuilder();
+			var entity = CreateBuilder().Build();
+			var auditCount = entity.UpdateAudits.Count();
+			
+			// act
+			entity.AddUpdateAudit(GenerateUser(), DateTime.UtcNow);
+			
+			// assert
+			var updatedCount = entity.UpdateAudits.Count();
+			Assert.Equal(auditCount + 1, updatedCount);
+		}
+
+		[Fact]
+		public void AddUpdateAudit_sets_User_on_added_UpdateAudit()
+		{
+			// arrange
+			var entity = CreateBuilder().Build();
 			var user = GenerateUser();
-
+			
 			// act
-			var output = builder.WithCreateAudit(user, DateTime.UtcNow)
-				.Build();
-
+			entity.AddUpdateAudit(user, DateTime.UtcNow);
+			
 			// assert
-			Assert.Equal(user, output.CreatedByUser);
+			var lastAudit = entity.UpdateAudits.Last();
+			Assert.Equal(user, lastAudit.User);
 		}
 
 		[Fact]
-		public void WithCreateAudit_before_Build_sets_CreatedDate()
+		public void AddUpdateAudit_sets_Date_on_added_UpdateAudit()
 		{
 			// arrange
-			var builder = CreateBuilder();
+			var entity = CreateBuilder().Build();
 			var date = DateTime.UtcNow;
-
+			
 			// act
-			var output = builder.WithCreateAudit(GenerateUser(), date)
-				.Build();
-
+			entity.AddUpdateAudit(GenerateUser(), date);
+			
 			// assert
-			Assert.Equal(date, output.CreatedDate);
-		}
-
-		[Fact]
-		public void InitialiseUpdateAudit_sets_LastModifiedByUser()
-		{
-			// arrange
-			var entity = CreateBuilder().Build();
-			entity.InitialiseCreateAudit(GenerateUser(), DateTime.UtcNow);
-			var user = GenerateUser();
-
-			// act
-			entity.InitialiseUpdateAudit(user, DateTime.UtcNow);
-
-			// assert
-			Assert.Equal(user, entity.LastModifiedByUser);
-		}
-
-		[Fact]
-		public void InitialiseUpdateAudit_sets_LastModifiedDate()
-		{
-			// arrange
-			var entity = CreateBuilder().Build();
-			entity.InitialiseCreateAudit(GenerateUser(), DateTime.UtcNow);
-			var date = DateTime.UtcNow;
-
-			// act
-			entity.InitialiseUpdateAudit(GenerateUser(), date);
-
-			// assert
-			Assert.Equal(date, entity.LastModifiedDate);
-		}
-
-		[Fact]
-		public void InitialiseUpdateAudit_throws_InvalidOperationAudit_if_InitialiseCreateAudit_not_called()
-		{
-			// arrange
-			var entity = CreateBuilder().Build();
-
-			// act
-			Assert.Throws<InvalidOperationException>(
-				() => entity.InitialiseUpdateAudit(GenerateUser(), DateTime.UtcNow));
+			var lastAudit = entity.UpdateAudits.Last();
+			Assert.Equal(date, lastAudit.Date);
 		}
 
 		private static Tag GenerateTag()
