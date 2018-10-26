@@ -7,18 +7,15 @@ namespace Domain
 	public abstract class Entity
 	{
 		private List<Tag> _tags;
-		private List<UpdateAudit> _updateAudits;
 		
 		protected Entity()
 		{
 			Id = Guid.NewGuid();
 			_tags = new List<Tag>();
-			_updateAudits = new List<UpdateAudit>();
 		}
 		
 		public Guid Id { get; private set; }
 		public IEnumerable<Tag> Tags => _tags;
-		public IEnumerable<UpdateAudit> UpdateAudits => _updateAudits;
 
 		public void AddTag(Tag tag)
 		{
@@ -30,11 +27,6 @@ namespace Domain
 		{
 			if(!_tags.Contains(tag)) throw new ArgumentException($"Entity does not have tag with ID: {tag.Id}");
 			_tags.Remove(tag);
-		}
-
-		public void AddUpdateAudit(User user, DateTime date)
-		{
-			_updateAudits.Add(new UpdateAudit(user, date));
 		}
 
 		public abstract class Builder<TEntity>

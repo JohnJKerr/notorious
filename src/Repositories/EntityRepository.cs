@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Contracts.Filters;
+using Contracts.Providers;
 using Contracts.Repositories;
 using Domain;
 using MongoDB.Driver;
@@ -9,7 +10,7 @@ using Storage;
 
 namespace Repositories
 {
-	public abstract class EntityRepository<TEntity, TFilter> : IEntityRepository<TEntity, TFilter>
+	public abstract class EntityRepository<TEntity, TFilter> : IEntityRepository<TEntity, TFilter>, ITenantRepository
 		where TEntity : Entity
 		where TFilter : Filter
 	{
@@ -19,8 +20,9 @@ namespace Repositories
 		private readonly List<TEntity> _deletions;
 		protected virtual FilterDefinition<TEntity> DefaultReadFilter => Builders<TEntity>.Filter.Empty;
 		protected virtual FilterDefinition<TEntity> DefaultWriteFilter => Builders<TEntity>.Filter.Empty;
-		
-		public EntityRepository(MongoStorageClient client)
+		protected Guid TenantUserId;
+
+		protected EntityRepository(MongoStorageClient client)
 		{
 			_client = client;
 			_inserts = new List<TEntity>();
@@ -28,8 +30,16 @@ namespace Repositories
 			_deletions = new List<TEntity>();
 		}
 
-		private IMongoCollection<TEntity> Collection => _client.Set<TEntity>();
-		
+		private IMongoCollection<TEntity> Collection
+		{
+			get
+			{
+				if(TenantUserId == default(Guid)) 
+					throw new InvalidOperationException("Cannot access data collections without setting tenancy");
+				return _client.Set<TEntity>();
+			}
+		}
+
 		public TEntity GetById(Guid id)
 		{
 			var filter = DefaultReadFilter & Builders<TEntity>.Filter.Eq(e => e.Id, id);
@@ -66,6 +76,11 @@ namespace Repositories
 			ProcessDeletions();
 			ProcessInserts();
 			ProcessUpdates();
+		}
+
+		public void SetTenancy(Guid userId)
+		{
+			TenantUserId = userId;
 		}
 
 		protected virtual FilterDefinition<TEntity> MapFilter(TFilter filter)

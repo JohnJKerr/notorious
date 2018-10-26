@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Contracts.Filters;
+using Contracts.Providers;
 using Domain;
 using MongoDB.Driver;
+using Providers;
 using Repositories;
 using Storage;
 using Xunit;
@@ -29,6 +31,7 @@ namespace Repository.Tests
 		{
 			Client = new MongoStorageClient(ConnectionString, DbName);
 			Repository = CreateRepository();
+			Repository.SetTenancy(Guid.NewGuid());
 		}
 
 		public void Dispose()
@@ -179,22 +182,6 @@ namespace Repository.Tests
 		}
 
 		[Fact]
-		public void Add_before_SaveChanges_adds_UpdateAudit_to_Entities()
-		{
-			// arrange
-			var entity = CreateEntity();
-			var auditCount = entity.UpdateAudits.Count();
-
-			// act
-			Repository.Add(entity);
-			Repository.SaveChanges();
-
-			// assert
-			var getEntity = Repository.GetById(entity.Id);
-			Assert.Equal(auditCount + 1, getEntity.UpdateAudits.Count());
-		}
-
-		[Fact]
 		public void SaveChanges_twice_after_Add_does_not_add_two_Entities_to_Collection()
 		{
 			// arrange
@@ -270,23 +257,6 @@ namespace Repository.Tests
 		}
 
 		[Fact]
-		public void Update_before_SaveChanges_adds_UpdateAudit_to_Entities()
-		{
-			// arrange
-			var entity = CreateAndSaveEntity();
-			var auditCount = entity.UpdateAudits.Count();
-			AddTagToEntity(entity);
-
-			// act
-			Repository.Update(entity);
-			Repository.SaveChanges();
-
-			// assert
-			var getEntity = Repository.GetById(entity.Id);
-			Assert.Equal(auditCount + 1, getEntity.UpdateAudits.Count());
-		}
-
-		[Fact]
 		public void Update_without_SaveChanges_does_not_update_the_Entity_in_the_Collection()
 		{
 			// arrange
@@ -328,6 +298,63 @@ namespace Repository.Tests
 
 			// assert
 			Assert.Null(exception);
+		}
+
+		[Fact]
+		public void GetById_throws_InvalidOperationException_if_SetTenancy_not_called()
+		{
+			// arrange
+			var entity = CreateAndSaveEntity();
+			var repository = CreateRepository();
+			
+			// act
+			var exception = Record.Exception(() => repository.GetById(entity.Id));
+			
+			// assert
+			Assert.IsType<InvalidOperationException>(exception);
+		}
+
+		[Fact]
+		public void GetByIds_throws_InvalidOperationException_if_SetTenancy_not_called()
+		{
+			// arrange
+			var entity = CreateAndSaveEntity();
+			var repository = CreateRepository();
+			
+			// act
+			var exception = Record.Exception(() => repository.GetByIds(entity.Id));
+			
+			// assert
+			Assert.IsType<InvalidOperationException>(exception);
+		}
+
+		[Fact]
+		public void Get_throws_InvalidOperationException_if_SetTenancy_not_called()
+		{
+			// arrange
+			var entity = CreateAndSaveEntity();
+			var repository = CreateRepository();
+			
+			// act
+			var exception = Record.Exception(() => repository.Get(CreateFilter()));
+			
+			// assert
+			Assert.IsType<InvalidOperationException>(exception);
+		}
+
+		[Fact]
+		public void SaveChanges_throws_InvalidOperationException_if_SetTenancy_not_called()
+		{
+			// arrange
+			var entity = CreateEntity();
+			var repository = CreateRepository();
+			repository.Add(entity);
+			
+			// act
+			var exception = Record.Exception(() => repository.SaveChanges());
+			
+			// assert
+			Assert.IsType<InvalidOperationException>(exception);
 		}
 
 		protected abstract TEntity CreateEntity();

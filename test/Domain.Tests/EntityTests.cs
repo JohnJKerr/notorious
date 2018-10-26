@@ -94,61 +94,6 @@ namespace Domain.Tests
 			Assert.Throws<ArgumentException>(() => entity.RemoveTag(tag));
 		}
 
-		[Fact]
-		public void UpdateAudits_defaults_to_empty_list()
-		{
-			// act
-			var entity = CreateBuilder().Build();
-			
-			// assert
-			Assert.Empty(entity.UpdateAudits);
-		}
-
-		[Fact]
-		public void AddUpdateAudit_adds_to_UpdateAudits()
-		{
-			// arrange
-			var entity = CreateBuilder().Build();
-			var auditCount = entity.UpdateAudits.Count();
-			
-			// act
-			entity.AddUpdateAudit(GenerateUser(), DateTime.UtcNow);
-			
-			// assert
-			var updatedCount = entity.UpdateAudits.Count();
-			Assert.Equal(auditCount + 1, updatedCount);
-		}
-
-		[Fact]
-		public void AddUpdateAudit_sets_User_on_added_UpdateAudit()
-		{
-			// arrange
-			var entity = CreateBuilder().Build();
-			var user = GenerateUser();
-			
-			// act
-			entity.AddUpdateAudit(user, DateTime.UtcNow);
-			
-			// assert
-			var lastAudit = entity.UpdateAudits.Last();
-			Assert.Equal(user, lastAudit.User);
-		}
-
-		[Fact]
-		public void AddUpdateAudit_sets_Date_on_added_UpdateAudit()
-		{
-			// arrange
-			var entity = CreateBuilder().Build();
-			var date = DateTime.UtcNow;
-			
-			// act
-			entity.AddUpdateAudit(GenerateUser(), date);
-			
-			// assert
-			var lastAudit = entity.UpdateAudits.Last();
-			Assert.Equal(date, lastAudit.Date);
-		}
-
 		private static Tag GenerateTag()
 		{
 			return new Tag.Builder(Guid.NewGuid().ToString())
